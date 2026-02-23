@@ -16,7 +16,7 @@ A modern web application for tracking job applications and their status, built w
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **Authentication**: NextAuth.js
-- **Database**: SQLite with Prisma ORM
+- **Database**: PostgreSQL with Prisma ORM
 - **Deployment**: Vercel
 
 ## Getting Started
@@ -25,6 +25,7 @@ A modern web application for tracking job applications and their status, built w
 
 - Node.js 18+ 
 - npm or yarn
+- PostgreSQL database (local or cloud)
 
 ### Installation
 
@@ -44,13 +45,18 @@ npm install
 cp .env.example .env
 ```
 
-Edit `.env` and add your `NEXTAUTH_SECRET` (you can generate one with `openssl rand -base64 32`).
+Edit `.env` and add:
+- `DATABASE_URL`: Your PostgreSQL connection string (e.g., `postgresql://user:password@localhost:5432/jobtracker?schema=public`)
+- `NEXTAUTH_SECRET`: Generate one with `openssl rand -base64 32`
+- `NEXTAUTH_URL`: `http://localhost:3000` for local development
 
 4. Set up the database:
 ```bash
 npx prisma generate
 npx prisma migrate dev --name init
 ```
+
+**Important**: Make sure to commit and push the migration files created in `prisma/migrations/` to your repository before deploying to Vercel.
 
 5. Run the development server:
 ```bash
@@ -59,25 +65,39 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+### Local PostgreSQL Setup Options
+
+**Option 1: Docker (Recommended)**
+```bash
+docker run --name jobtracker-postgres -e POSTGRES_PASSWORD=password -e POSTGRES_DB=jobtracker -p 5432:5432 -d postgres
+```
+
+**Option 2: Install PostgreSQL locally**
+- Install PostgreSQL from [postgresql.org](https://www.postgresql.org/download/)
+- Create a database: `createdb jobtracker`
+- Use connection string: `postgresql://your_username:your_password@localhost:5432/jobtracker?schema=public`
+
 ## Deployment to Vercel
 
 1. Push your code to GitHub
+
 2. Import your repository in Vercel
-3. Add environment variables in Vercel dashboard:
-   - `DATABASE_URL`: For production, use a PostgreSQL database (Vercel Postgres recommended)
-   - `NEXTAUTH_URL`: Your Vercel deployment URL
-   - `NEXTAUTH_SECRET`: A secure random string
-4. Deploy!
 
-**Note**: For production, you'll need to update the Prisma schema to use PostgreSQL instead of SQLite. Update `datasource db` in `prisma/schema.prisma` to:
-```prisma
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-```
+3. **Add Vercel Postgres Database:**
+   - In your Vercel project dashboard, go to the "Storage" tab
+   - Click "Create Database" and select "Postgres"
+   - This will automatically add the `DATABASE_URL` environment variable
 
-Then run migrations in production.
+4. **Add other environment variables in Vercel dashboard:**
+   - `NEXTAUTH_URL`: Your Vercel deployment URL (e.g., `https://your-app.vercel.app`)
+   - `NEXTAUTH_SECRET`: A secure random string (generate with `openssl rand -base64 32`)
+
+5. **Deploy!** The build will automatically:
+   - Generate Prisma Client
+   - Run database migrations
+   - Build your Next.js app
+
+**Note**: The `DATABASE_URL` from Vercel Postgres is automatically provided and includes SSL, so no additional configuration is needed.
 
 ## Project Structure
 
